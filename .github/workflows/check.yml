@@ -1,0 +1,21 @@
+# cases.js를 고칠 때마다 검증 스크립트를 돌려 깨진 데이터가 올라가지 않게 막는다
+name: 사례 데이터 검증
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: cases.js 검증
+        run: node check-cases.js

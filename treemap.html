@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<!-- 전체 사례를 문의 건수 크기로 보여주는 트리맵 화면 -->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>전체 사례 한눈에 보기 · 고등 나이스 치트시트</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root {
+    --paper: #e3e1d8;
+    --card:  #fbfaf6;
+    --ink:   #1f2328;
+    --sub:   #6b7078;
+    --line:  #c9c6bb;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    word-break: keep-all;
+    overflow-wrap: normal;
+    hyphens: none;
+    margin: 0;
+    padding: 0 20px 60px;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+    font-size: 16px;
+    line-height: 1.65;
+    letter-spacing: -0.2px;
+  }
+
+  .wrap { max-width: 1180px; margin: 0 auto; }
+
+  header { padding: 28px 0 20px; }
+
+  .back {
+    display: inline-block;
+    margin-bottom: 16px;
+    font-size: 14px;
+    color: var(--sub);
+    text-decoration: none;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .back:hover { color: var(--ink); border-color: var(--ink); }
+
+  h1 {
+    font-size: 27px;
+    font-weight: 800;
+    letter-spacing: -0.9px;
+    margin: 0 0 8px;
+  }
+
+  .lead {
+    margin: 0;
+    max-width: 46em;
+    font-size: 15px;
+    color: var(--sub);
+  }
+
+  /* ── 범례 ───────────────────────────────── */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin: 18px 0 4px;
+    font-size: 13.5px;
+    color: var(--sub);
+  }
+
+  .legend span { display: flex; align-items: center; gap: 6px; }
+
+  .legend i {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    display: block;
+  }
+
+  /* ── 트리맵 ─────────────────────────────── */
+  .tree {
+    position: relative;
+    margin-top: 16px;
+  }
+
+  .lines {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .tile {
+    position: absolute;
+    display: block;
+    overflow: hidden;
+    padding: 6px 8px;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 2px;
+    line-height: 1.3;
+  }
+
+  .tile:hover { outline: 2px solid var(--ink); outline-offset: -2px; }
+  .tile:focus-visible { outline: 3px solid var(--ink); outline-offset: -3px; }
+
+  .tile b {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 700;
+  }
+
+  .tile em {
+    display: block;
+    margin-top: 3px;
+    font-size: 11px;
+    font-style: normal;
+    opacity: 0.85;
+  }
+
+  .out {
+    position: absolute;
+    display: block;
+    font-size: 12px;
+    line-height: 1.35;
+    color: var(--ink);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+  }
+
+  .out:hover { border-color: var(--ink); }
+  .out em { font-style: normal; color: var(--sub); }
+
+  .footnote {
+    margin-top: 26px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+    font-size: 13px;
+    color: var(--sub);
+  }
+
+  /* 좁은 화면에서는 트리맵 대신 목록으로 보여준다 */
+  .fallback { margin-top: 16px; }
+
+  .fallback a {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 11px 14px;
+    margin-bottom: 7px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-left-width: 5px;
+    border-radius: 3px;
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  .fallback b { font-size: 14.5px; font-weight: 700; line-height: 1.4; }
+  .fallback i { font-style: normal; font-size: 12.5px; color: var(--sub); }
+  .fallback em { font-style: normal; font-size: 13px; color: var(--sub); white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <a class="back" href="index.html">첫 화면으로</a>
+    <h1>전체 사례 한눈에 보기</h1>
+    <p class="lead">칸의 크기는 나이스광장에 올라온 문의 건수입니다. 크게 자리한 것일수록 많은 학교가 겪는 문제입니다. 칸을 누르면 그 사례가 열립니다.</p>
+    <div class="legend" id="legend"></div>
+  </header>
+
+  <div class="tree" id="tree"></div>
+  <div class="fallback" id="fallback" hidden></div>
+
+  <p class="footnote">문의 건수는 나이스광장 질의응답에 올라온 비슷한 질문의 수입니다. 우리 학교 문의 수가 아닙니다.</p>
+
+</div>
+
+<script src="cases.js"></script>
+<script>
+  var tree     = document.getElementById('tree');
+  var fallback = document.getElementById('fallback');
+
+  document.getElementById('legend').innerHTML = Object.keys(PERIODS).map(function (k) {
+    return '<span><i style="background:' + PERIODS[k].tone + '"></i>' + PERIODS[k].name + '</span>';
+  }).join('');
+
+  // 문의가 많은 순으로 놓아야 칸이 고르게 나뉜다.
+  var items = CASES.slice().sort(function (a, b) { return b.asks - a.asks; });
+
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function href(c) { return 'list.html?p=' + c.periods[0] + '#' + c.id; }
+
+  // 짧은 이름이 칸 안에서 몇 줄이 되는지 어림한다. 한 글자를 12.5px로 본다.
+  function rows(text, width) {
+    return Math.ceil(text.length * 12.5 / Math.max(1, width - 16));
+  }
+
+  function fits(r) {
+    if (r.w < 74) return false;
+    return 12 + rows(r.c.short, r.w) * 17 <= r.h;
+  }
+  function tone(c) { return PERIODS[c.periods[0]].tone; }
+
+  // 정사각형에 가깝게 칸을 나누는 방식(squarified treemap)이다.
+  function worst(areas, rowArea, short) {
+    var max = Math.max.apply(null, areas);
+    var min = Math.min.apply(null, areas);
+    var s2 = short * short, r2 = rowArea * rowArea;
+    return Math.max(s2 * max / r2, r2 / (s2 * min));
+  }
+
+  function squarify(list, x, y, w, h, out) {
+    list = list.slice();
+
+    while (list.length) {
+      if (list.length === 1) {
+        out.push({ c: list[0], x: x, y: y, w: w, h: h });
+        return;
+      }
+
+      var totalV = list.reduce(function (s, i) { return s + i.asks; }, 0);
+      var scale = (w * h) / totalV;
+      var short = Math.min(w, h);
+      var row = [], rowV = 0, best = Infinity;
+
+      for (var k = 0; k < list.length; k++) {
+        var nextV = rowV + list[k].asks;
+        var areas = row.concat([list[k]]).map(function (i) { return i.asks * scale; });
+        var score = worst(areas, nextV * scale, short);
+
+        if (row.length === 0 || score <= best) {
+          row.push(list[k]); rowV = nextV; best = score;
+        } else break;
+      }
+
+      var rowArea = rowV * scale;
+
+      if (w >= h) {
+        var rw = rowArea / h, yy = y;
+        row.forEach(function (i) {
+          var ih = (i.asks * scale) / rw;
+          out.push({ c: i, x: x, y: yy, w: rw, h: ih });
+          yy += ih;
+        });
+        x += rw; w -= rw;
+      } else {
+        var rh = rowArea / w, xx = x;
+        row.forEach(function (i) {
+          var iw = (i.asks * scale) / rh;
+          out.push({ c: i, x: xx, y: y, w: iw, h: rh });
+          xx += iw;
+        });
+        y += rh; h -= rh;
+      }
+
+      list = list.slice(row.length);
+    }
+  }
+
+  // 밖으로 뺀 제목들이 서로 겹치지 않게 아래로 밀어 준다.
+  function spread(labels, height) {
+    labels.sort(function (a, b) { return a.cy - b.cy; });
+
+    // 제목이 많으면 줄 간격을 좁혀 여백 안에 다 들어가게 한다.
+    var room = height - 34;   // 마지막 제목이 두 줄일 때를 감안해 아래를 비워 둔다
+    var gap = Math.min(21, Math.max(14, room / Math.max(labels.length, 1)));
+
+    var y = 0;
+    labels.forEach(function (l) {
+      l.ly = Math.max(l.cy, y);
+      y = l.ly + gap;
+    });
+
+    var last = labels.length ? labels[labels.length - 1].ly : 0;
+    var over = last - room;
+    if (over > 0) {
+      labels.forEach(function (l) { l.ly = Math.max(0, l.ly - over); });
+    }
+    return labels;
+  }
+
+  function draw() {
+    var full = tree.clientWidth;
+
+    // 폭이 좁으면 칸이 너무 잘게 나뉘므로 목록으로 보여준다.
+    if (full < 900) {
+      tree.hidden = true;
+      fallback.hidden = false;
+      fallback.innerHTML = items.map(function (c) {
+        return '<a href="' + href(c) + '" style="border-left-color:' + tone(c) + '">'
+          + '<b>' + esc(c.short) + '</b><em>' + c.asks + '건</em></a>';
+      }).join('');
+      return;
+    }
+
+    tree.hidden = false;
+    fallback.hidden = true;
+
+    // 트리맵은 작은 칸이 오른쪽 아래에 몰리므로 제목 자리도 오른쪽에 둔다.
+    var padLeft = 40;
+    var gutter = 300;
+    var height = 760;
+    var mapX = padLeft, mapW = full - padLeft - gutter;
+
+    var rects = [];
+    squarify(items, 0, 0, mapW, height, rects);
+
+    tree.style.height = height + 'px';
+
+    var inside = [], outside = [];
+    rects.forEach(function (r) {
+      (fits(r) ? inside : outside).push(r);
+    });
+
+    // 작은 칸은 오른쪽 아래에 몰리므로 제목 자리는 오른쪽 한 곳에 모은다.
+    var labels = spread(outside.map(function (r) {
+      return { r: r, cy: r.y + r.h / 2 };
+    }), height);
+
+    var html = '';
+
+    // 칸
+    html += rects.map(function (r) {
+      var c = r.c;
+      var body = fits(r)
+        ? '<b>' + esc(c.short) + '</b>' + (r.h >= 56 ? '<em>' + c.asks + '건</em>' : '')
+        : '';
+      return '<a class="tile" href="' + href(c) + '" title="' + esc(c.title) + ' · 문의 ' + c.asks + '건" '
+        + 'style="left:' + (mapX + r.x + 1) + 'px;top:' + (r.y + 1) + 'px;'
+        + 'width:' + Math.max(0, r.w - 2) + 'px;height:' + Math.max(0, r.h - 2) + 'px;'
+        + 'background:' + tone(c) + '">' + body + '</a>';
+    }).join('');
+
+    // 칸과 제목을 잇는 선 · 칸 위로 그려야 어디를 가리키는지 보인다
+    var lines = labels.map(function (l) {
+      var x1 = mapX + l.r.x + l.r.w, y1 = l.r.y + l.r.h / 2;
+      var gx = mapX + mapW + 14;
+      return '<polyline points="' + (mapX + mapW + 26) + ',' + (l.ly + 8) + ' '
+        + gx + ',' + (l.ly + 8) + ' ' + gx + ',' + y1 + ' ' + x1 + ',' + y1 + '" />';
+    }).join('');
+
+    html += '<svg class="lines" width="' + full + '" height="' + height + '" '
+      + 'fill="none" stroke="#1f2328" stroke-opacity="0.4" stroke-width="1">' + lines + '</svg>';
+
+    // 밖으로 뺀 제목
+    html += labels.map(function (l) {
+      return '<a class="out" href="' + href(l.r.c) + '" title="' + esc(l.r.c.title) + '" '
+        + 'style="left:' + (mapX + mapW + 32) + 'px;top:' + l.ly
+        + 'px;width:' + (gutter - 40) + 'px">'
+        + esc(l.r.c.short) + ' <em>' + l.r.c.asks + '건</em></a>';
+    }).join('');
+
+    tree.innerHTML = html;
+  }
+
+  draw();
+
+  var timer;
+  window.addEventListener('resize', function () {
+    clearTimeout(timer);
+    timer = setTimeout(draw, 150);
+  });
+</script>
+</body>
+</html>
